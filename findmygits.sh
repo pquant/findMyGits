@@ -5,3 +5,4 @@ cd $FUNC_REPO
 #echo $FUNC_REPO
 . bin/activate
 python findmygits.py
+deactivate
