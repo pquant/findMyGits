@@ -1,4 +1,5 @@
 *
 !.gitignore
-findmygits
-src/findmygits.py
+!findmygits
+!findmygits.py
+!*/
