@@ -1,4 +1,4 @@
 *
 !.gitignore
 findmygits.sh
-findmygits/findmygits.py
+src/findmygits.py
