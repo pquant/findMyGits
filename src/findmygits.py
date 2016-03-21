@@ -19,12 +19,25 @@ from pprint import pprint
 def find():
     home = os.environ['HOME']
     os.chdir(home)
-    match = '**/.git'
-    list = glob.glob(match, recursive=True)
-    return list
+    match_active = '**/.git'
+    match_bare = '**/*.git'
+    list_active = glob.glob(match_active, recursive=True)
+    list_bare = glob.glob(match_bare, recursive=True)
+
+    return (list_active, list_bare)
 
 
 if __name__ == '__main__':
     # args = docopt(__doc__)
     # print(args)
-    pprint(find())
+    active, bare = find()
+    bar = '-----------------------------'
+    print(bar)
+    print("-- Active repos (characerised by a '.git' folder)")
+    print(bar)
+    pprint(active)
+    print('\n' + bar)
+    print("-- Bare repos (expected to follow the naming convention XXX.git)")
+    print(bar)
+    pprint(bare)
+
