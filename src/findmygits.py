@@ -12,6 +12,7 @@ Options:
 
 import os
 import glob
+import subprocess
 from pprint import pprint
 # TODO : use docopt later when input arguments are needed (e.g. --exclude some_directory)
 #from docopt import docopt
@@ -26,10 +27,11 @@ def find():
 
     return (list_active, list_bare)
 
-
 if __name__ == '__main__':
     # args = docopt(__doc__)
     # print(args)
+
+    # a) List all active and bare repos
     active, bare = find()
     bar = '-----------------------------'
     print(bar)
@@ -41,3 +43,4 @@ if __name__ == '__main__':
     print(bar)
     pprint(bare)
 
+    # b) For all active working directories, list remotes
