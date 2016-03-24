@@ -2,5 +2,6 @@
 
 FUNC_REPO="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/src"
 cd $FUNC_REPO
-python findmygits.py
+
+python findmygits.py "$@"
 
