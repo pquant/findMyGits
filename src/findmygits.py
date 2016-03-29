@@ -1,22 +1,27 @@
 import os
 import subprocess
 import argparse
-
+from pprint import pprint
 
 def find_repos(exclude_dirs=None):
     # Define shell command to run
     home = os.environ['HOME']
-    shell_cmd = 'find ' + home + ' -type d -name "*.git"'
+    shell_find_cmd = 'find ' + home + ' -type d -name "*.git"'
     # Add directories to exclude from search, if specified by user
     if exclude_dirs is not None:
         for d in exclude_dirs:
-            shell_cmd += '| grep -v ' + d
+            shell_find_cmd += '| grep -v ' + d
     # Integrate shell command in a subprocess and run
-    p = subprocess.Popen(shell_cmd, shell=True, stdout=subprocess.PIPE)
+    p = subprocess.Popen(shell_find_cmd, shell=True, stdout=subprocess.PIPE)
     # Retrieve output
-    repo_list = p.communicate()[0].decode('UTF-8').split('\n')
-    list_active = [r for r in repo_list if '/.git' in r]
-    list_bare = [r for r in repo_list if r not in list_active]
+    repo_list = _decode_process(p).split('\n')[:-1]
+    # split bare/active working repos
+    list_bare, list_active = [], []
+    for r in repo_list:
+        if _is_bare_repo_cmd(r):
+            list_bare.append(r)
+        else:
+            list_active.append(r)
 
     return list_active, list_bare
 
@@ -30,7 +35,7 @@ def print_repos(bare_repos, active_repos):
     format_string = small_bar + '\n{0}:\n' + small_bar + '\nREMOTES:\n{1}'
 
     print(bar)
-    print("-- Bare repos (expected to follow the naming convention XXX.git)")
+    print("-- Bare repos (expected to follow the naming convention XXX.git and further checked using 'git rev-parse --is_bare_repository')")
     print(bar)
     for r in bare_repos:
         print(r)
@@ -63,6 +68,14 @@ def _path_sep():
 
 def _decode_process(process):
         return process.communicate()[0].decode('UTF-8')
+
+
+def _is_bare_repo_cmd(repo):
+    os.chdir(repo)
+    cmd = 'git rev-parse --is-bare-repository'
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    is_bare_repo = _decode_process(p).split('\n')[0].upper() == 'TRUE'
+    return is_bare_repo
 
 ########################################################
 # Main
