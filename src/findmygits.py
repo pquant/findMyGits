@@ -26,33 +26,62 @@ def find_repos(exclude_dirs=None, only_dirs=None):
 
 def print_repos(bare_repos, active_repos):
 
-    tiny_bar = '-------------------'
-    small_bar = tiny_bar * 2
-    bar = small_bar * 2
+    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD_HEADER +
+          "Bare repos (determined using 'git rev-parse --is_bare_repository')" +
+          _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
 
-    format_string = small_bar + '\n{0}:\n' + small_bar + '\nREMOTES:\n{1}'
-
-    print(bar)
-    print("-- Bare repos (determined using 'git rev-parse --is_bare_repository')")
-    print(bar)
     for r in bare_repos:
         print(r)
-    print('\n' + bar)
+    print('\n')
 
-    print("-- Active repos (characterised by a '.git' folder) and corresponding status/remotes")
-    print(bar)
+    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD  + _bar + _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD_HEADER +
+          "Active repos (characterised by a '.git' folder) and corresponding status/remotes" +
+          _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD  + _bar + _TerminalTextColours.END)
+    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+
     sep = _path_sep()
     for r in active_repos:
         r_top_level = sep.join(r.split(sep)[:-1])
         os.chdir(r_top_level)
         p_remote = subprocess.Popen('git remote -v', shell=True, stdout=subprocess.PIPE)
-        print(format_string.format(r_top_level, _decode_process(p_remote)))
+        remotes_str = _decode_process(p_remote)
+        _format_output(r_top_level, remotes_str)
+
+
+def _format_output(root_str, remotes_str):
+    # Highlight repos without remote
+    remotes_str = _TerminalTextColours.WARNING + 'NONE\n' + _TerminalTextColours.END if remotes_str == '' else '\n' + remotes_str
+    print(_output_template.format(root_str, remotes_str))
 
 
 ########################################################
 # Private
 ########################################################
 # TODO : check it actually works on Windows
+_flags = {'exclude': '--exclude-dirs',
+          'include-only': '--include-only'}
+
+_tiny_bar = '-------------------'
+_small_bar = _tiny_bar * 2
+_bar = _small_bar * 2
+_output_template = _small_bar + '\n{0}:\n' + _small_bar + '\nREMOTES:{1}'
+
+
+class _TerminalTextColours:
+    BOLD = '\033[1m'
+    BOLD_HEADER = '\033[1m\033[95m'
+    OK = '\033[92m'
+    WARNING = '\033[91m'
+    END = '\033[0m'
+
+
 def _path_sep():
 
     os_type = os.name
@@ -83,6 +112,7 @@ def _check_flag_consistency(exclude_dirs, only_dirs):
     if exclude_dirs is []:
         raise SystemExit(_flags['exclude'] + ' flag provided without directories to exclude')
 
+
 def _write_cmd(exclude_dirs, only_dirs):
     home = os.environ['HOME']
     shell_find_cmd = ''
@@ -101,8 +131,6 @@ def _write_cmd(exclude_dirs, only_dirs):
     return shell_find_cmd
 
 
-_flags = { 'exclude': '--exclude-dirs',
-           'include-only': '--include-only'}
 ########################################################
 # Main
 ########################################################
