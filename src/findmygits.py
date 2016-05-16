@@ -26,39 +26,33 @@ def find_repos(exclude_dirs=None, only_dirs=None):
 
 def print_repos(bare_repos, active_repos):
 
-    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
-    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+    # View bare repos
+    print(_header_bar)
     print(_TerminalTextColours.BOLD_HEADER +
           "Bare repos (determined using 'git rev-parse --is_bare_repository')" +
           _TerminalTextColours.END)
-    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
-    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+    print(_header_bar)
 
     for r in bare_repos:
         print(r)
     print('\n')
 
-    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
-    print(_TerminalTextColours.BOLD  + _bar + _TerminalTextColours.END)
+    # View active repos and list their remotes and status
+    print(_header_bar)
     print(_TerminalTextColours.BOLD_HEADER +
           "Active repos (characterised by a '.git' folder) and corresponding status/remotes" +
           _TerminalTextColours.END)
-    print(_TerminalTextColours.BOLD  + _bar + _TerminalTextColours.END)
-    print(_TerminalTextColours.BOLD + _bar + _TerminalTextColours.END)
+    print(_header_bar)
 
     sep = _path_sep()
     for r in active_repos:
         r_top_level = sep.join(r.split(sep)[:-1])
         os.chdir(r_top_level)
         p_remote = subprocess.Popen('git remote -v', shell=True, stdout=subprocess.PIPE)
+        p_status = subprocess.Popen('git status | grep "nothing to commit"', shell=True, stdout=subprocess.PIPE)
         remotes_str = _decode_process(p_remote)
-        _format_output(r_top_level, remotes_str)
-
-
-def _format_output(root_str, remotes_str):
-    # Highlight repos without remote
-    remotes_str = _TerminalTextColours.WARNING + 'NONE\n' + _TerminalTextColours.END if remotes_str == '' else '\n' + remotes_str
-    print(_output_template.format(root_str, remotes_str))
+        status_str = _decode_process(p_status)
+        _format_output(r_top_level, remotes_str, status_str)
 
 
 ########################################################
@@ -67,18 +61,19 @@ def _format_output(root_str, remotes_str):
 # TODO : check it actually works on Windows
 _flags = {'exclude': '--exclude-dirs',
           'include-only': '--include-only'}
-
-_tiny_bar = '-------------------'
-_small_bar = _tiny_bar * 2
-_bar = _small_bar * 2
-_output_template = _small_bar + '\n{0}:\n' + _small_bar + '\nREMOTES:{1}'
+_bar_elem_dash = '-'
+_bar_elem_hash = '#'
+_small_bar = _bar_elem_dash * 40
+_header_bar = _bar_elem_hash * 80
+_output_template = _small_bar + '\n{0}:\n' + _small_bar + '\nREMOTES:{1}' + '\nSTATUS:{2}'
 
 
 class _TerminalTextColours:
     BOLD = '\033[1m'
-    BOLD_HEADER = '\033[1m\033[95m'
+    HEADER = '\033[95m'
+    BOLD_HEADER = BOLD + HEADER
     OK = '\033[92m'
-    WARNING = '\033[91m'
+    FAIL = '\033[91m'
     END = '\033[0m'
 
 
@@ -101,8 +96,17 @@ def _is_bare_repo_cmd(repo):
     os.chdir(repo)
     cmd = 'git rev-parse --is-bare-repository'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    is_bare_repo = _decode_process(p).split('\n')[0].upper() == 'TRUE'
-    return is_bare_repo
+    decoded = _decode_process(p).split('\n')[0].upper()
+    # tried to catch Exception from Popen, couldn't
+    # If Popen fails, it does however return '' when process decoded
+    if decoded == '':
+        err_mssg = _TerminalTextColours.FAIL + \
+                   '\nRepo {0} was initially considered as a valid git repo on the basis that it has *.git ' \
+                   'as part of its name, but running "git rev-parse --is-bare-repository" returned ' \
+                   '"fatal: Not a git repository (or any of the parent directories)"' + _TerminalTextColours.END
+
+        raise Exception(err_mssg.format(repo))
+    return decoded == 'TRUE'
 
 
 def _check_flag_consistency(exclude_dirs, only_dirs):
@@ -129,6 +133,15 @@ def _write_cmd(exclude_dirs, only_dirs):
         shell_find_cmd = 'find ' + home + ' -type d -name "*.git"'
 
     return shell_find_cmd
+
+
+def _format_output(root_str, remotes_str, status_str):
+    # Highlight repos without remote
+    remotes_str = _TerminalTextColours.FAIL + 'NONE\n' + _TerminalTextColours.END if remotes_str == '' \
+        else '\n' + remotes_str
+    status_str = _TerminalTextColours.FAIL + 'MODIFIED\n' + _TerminalTextColours.END if status_str == '' \
+        else _TerminalTextColours.OK + 'CLEAN\n' + _TerminalTextColours.END
+    print(_output_template.format(root_str, remotes_str, status_str))
 
 
 ########################################################
