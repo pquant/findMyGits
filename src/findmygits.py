@@ -88,6 +88,17 @@ def _path_sep():
         raise SystemError('Unknown os type {}'.format(os_type))
 
 
+def _home_dir():
+
+    os_type = os.name
+    if os_type == 'posix':
+        return os.environ['HOME']
+    elif os_type == 'nt':
+        return 'C:\\'
+    else:
+        raise SystemError('Unknown os type {}'.format(os_type))
+
+
 def _decode_process(process):
         return process.communicate()[0].decode('UTF-8')
 
@@ -118,7 +129,7 @@ def _check_flag_consistency(exclude_dirs, only_dirs):
 
 
 def _write_cmd(exclude_dirs, only_dirs):
-    home = os.environ['HOME']
+    home = _home_dir()
     shell_find_cmd = ''
     # Restrict to dome dirs only
     if only_dirs is not None:
