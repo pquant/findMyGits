@@ -160,7 +160,7 @@ def _format_output(root_str, remotes_str, status_str):
 ########################################################
 if __name__ == '__main__':
     # Define ParserExtract args from command-line
-    parser = argparse.ArgumentParser('Lists all local git repos on your computer. Built on Ubuntu 15.10 (Wily)')
+    parser = argparse.ArgumentParser('Lists all local git repos on your computer. Prints bare repos and working repos (with corresponding remotes and statuses')
     parser.add_argument(_flags['exclude'], nargs='*', dest='exclude', metavar='dir',  help='Directories to exclude')
     parser.add_argument(_flags['include-only'], nargs=1, dest='include_only', metavar='dir',  help='One Directory to include exclusively')
     args = parser.parse_args()
