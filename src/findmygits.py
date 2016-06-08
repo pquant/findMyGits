@@ -83,18 +83,18 @@ def _path_sep():
     if os_type == 'posix':
         return '/'
     elif os_type == 'nt':
-        return '\\'
+        raise SystemError("findmygits does not yet handle Windows")#return '\\'
     else:
         raise SystemError('Unknown os type {}'.format(os_type))
 
 
 def home_dir():
 
-    os_type = os.environ['OS']
+    os_type = os.name #os.environ['OS']
     if os_type == 'posix':
         return os.environ['HOME']
-    elif os_type == 'Windows_NT':
-        return 'C:\\\\'
+    elif os_type == 'nt':
+        raise SystemError("findmygits does not yet handle Windows")#return os.environ['HOME']
     else:
         raise SystemError('Unknown os type {}'.format(os_type))
 
