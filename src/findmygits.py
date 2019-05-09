@@ -12,7 +12,8 @@ def find_repos(exclude_dirs=None, only_dirs=None):
     # Integrate shell command in a subprocess and run it with shell
     p = subprocess.Popen(shell_find_cmd, shell=True, stdout=subprocess.PIPE)
     # Retrieve output
-    repo_list = _decode_process(p).split('\n')[:-1]
+    repo_list = p . communicate()[0] . decode('UTF-8') . split('\n')[:-1]
+
     # split bare/active working repos
     list_bare, list_active = [], []
     for r in repo_list:
@@ -50,10 +51,9 @@ def print_repos(bare_repos, active_repos):
         os.chdir(r_top_level)
         p_remote = subprocess.Popen('git remote -v', shell=True, stdout=subprocess.PIPE)
         p_status = subprocess.Popen('git status | grep "nothing to commit"', shell=True, stdout=subprocess.PIPE)
-        remotes_str = _decode_process(p_remote)
-        status_str = _decode_process(p_status)
+        remotes_str = p_remote . communicate()[0] . decode('UTF-8')
+        status_str  = p_status . communicate()[0] . decode('UTF-8')
         _format_output(r_top_level, remotes_str, status_str)
-
 
 ########################################################
 # Private
@@ -99,15 +99,11 @@ def home_dir():
         raise SystemError('Unknown os type {}'.format(os_type))
 
 
-def _decode_process(process):
-        return process.communicate()[0].decode('UTF-8')
-
-
 def _is_bare_repo_cmd(repo):
     os.chdir(repo)
     cmd = 'git rev-parse --is-bare-repository'
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    decoded = _decode_process(p).split('\n')[0].upper()
+    decoded = p . communicate()[0] . decode('UTF-8') . split('\n')[0] . upper()
     # tried to catch Exception from Popen, couldn't
     # If Popen fails, it does however return '' when process decoded
     if decoded == '':
