@@ -65,7 +65,6 @@ _bar_elem_dash = '-'
 _bar_elem_hash = '#'
 _small_bar  = _bar_elem_dash * 40
 _header_bar = _bar_elem_hash * 80
-_output_template = _small_bar + '\n{0}:\n' + _small_bar + '\nREMOTES:{1}' + '\nSTATUS:{2}'
 
 
 class _TermColours:
@@ -149,7 +148,8 @@ def _format_output(root: str, remotes: str, status: str):
     remotes = _TermColours.FAIL + 'NONE\n'     + _TermColours.END if remotes == '' else '\n' + remotes
     status  = _TermColours.FAIL + 'MODIFIED\n' + _TermColours.END if status == ''  else _TermColours.OK + 'CLEAN\n' + _TermColours.END
 
-    print(_output_template.format(root, remotes, status))
+    output_str = _small_bar + '\n{}:\n' + _small_bar + '\nREMOTES:{}' + '\nSTATUS:{}'
+    print( output_str . format(root, remotes, status) )
 
 
 ########################################################
