@@ -10,10 +10,10 @@ def find_repos(ex_dirs=None, only_dirs=None):
 
     shell_find_cmd = _write_cmd(ex_dirs, only_dirs)
 
-    repos      = Popen(shell_find_cmd, shell = True, stdout = PIPE) \
-               . communicate()[0] \
-               . decode('UTF-8') \
-               . split('\n')[:-1]
+    repos = Popen(shell_find_cmd, shell = True, stdout = PIPE) \
+          . communicate()[0] \
+          . decode('UTF-8') \
+          . split('\n')[:-1]
 
     bares, actives = [], []
 
@@ -26,71 +26,86 @@ def find_repos(ex_dirs=None, only_dirs=None):
 
 def print_repos(bares, actives):
 
-    print(_header_bar)
-    print( _TermColours.BOLD_HEADER
-         + "Bare repos (determined using 'git rev-parse --is_baresitory')"
-         + _TermColours.END)
-    print(_header_bar)
+    _header_bar = '#' * 80
+
+    print( _header_bar
+         + _TermColours.BOLD_HEADER
+         + "\nBare repos (determined using 'git rev-parse --is_baresitory')\n"
+         + _TermColours.END
+         +_header_bar)
 
     for r in bares:  print(r)
 
-    print('\n')
-
-    print(_header_bar)
-    print( _TermColours.BOLD_HEADER
-         + "Active repos (characterised by a '.git' folder) and corresponding status/remotes"
-         + _TermColours.END)
-    print(_header_bar)
+    print( '\n' + _header_bar
+         + _TermColours.BOLD_HEADER
+         + "\nActive repos (characterised by a '.git' folder) and corresponding status/remotes\n"
+         + _TermColours.END
+         + _header_bar)
 
     sep = _path_sep()
+
     for r in actives:
-        r_top_level = sep.join(r.split(sep)[:-1])
+        root = sep.join(r.split(sep)[:-1])
 
-        os.chdir(r_top_level)
+        os.chdir(root)
 
-        p_remote = Popen('git remote -v', shell=True, stdout=PIPE)
-        p_status = Popen('git status | grep "nothing to commit"', shell=True, stdout=PIPE)
+        #p_status = Popen('git status | grep -E "'+status_patterns+'"', shell=True, stdout=PIPE)
+        remotes = Popen('git remote -v', shell=True, stdout=PIPE) . communicate()[0] . decode('UTF-8')
+        status  = Popen('git status',    shell=True, stdout=PIPE) . communicate()[0] . decode('UTF-8')
 
-        remotes_str = p_remote . communicate()[0] . decode('UTF-8')
-        status_str  = p_status . communicate()[0] . decode('UTF-8')
+        sync_remote_matches, changes_matches = [], []
 
-        _format_output(r_top_level, remotes_str, status_str)
+        for s in status.split('\n'):
+            if   s.startswith("Your branch is ahead"):      sync_remote_matches.append(_TermColours.BAD+s+_TermColours.END)
+            elif s.startswith("Your branch is behind"):     sync_remote_matches.append(_TermColours.BAD+s+_TermColours.END)
+            elif s.startswith("Your branch is up-to-date"): sync_remote_matches.append(_TermColours.OK +s+_TermColours.END)
+            elif s.startswith("Changes not staged"):        changes_matches    .append(_TermColours.BAD+s+_TermColours.END)
+            elif s.startswith("Changes to be committed"):   changes_matches    .append(_TermColours.BAD+s+_TermColours.END)
+            elif s.startswith("nothing to commit"):         changes_matches    .append(_TermColours.OK +s+_TermColours.END)
+
+        #print("Zi status iz: "+status)
+        #print("sync_remote_matches: "+str(sync_remote_matches))
+        #print("changes_matches: "+str(changes_matches))
+
+        output_str = ('-'*40)+'\n{}:\n'+('-'*40)+'\nREMOTES:{}'+'\nREMOTE SYNC:{}'+'\nCHANGES:{}'
+        print( output_str . format( root
+                                  , _TermColours.BAD+'NONE\n'+_TermColours.END if remotes == '' else '\n' + remotes
+                                  , ' '.join(sync_remote_matches)
+                                  , ' '.join(changes_matches)
+                                  ))
+
 
 ########################################################
 # Private
 ########################################################
-# TODO : check it actually works on Windows
-_flags = {'exclude': '--exclude-dirs',   'include-only': '--include-only'}
-_bar_elem_dash = '-'
-_bar_elem_hash = '#'
-_small_bar  = _bar_elem_dash * 40
-_header_bar = _bar_elem_hash * 80
+def _check_flag_consistency(ex_dirs, only_dirs):
 
+    if ex_dirs is not None and only_dirs is not None:
+        raise SystemExit('One of '+_flags['exclude']+' or '+_flags['include-only']+' flags expected, not both')
 
-class _TermColours:
-    BOLD    = '\033[1m'
-    HEADER  = '\033[95m'
-    BOLD_HEADER = BOLD + HEADER
-    OK    = '\033[92m'
-    FAIL  = '\033[91m'
-    END   = '\033[0m'
+    if ex_dirs is []:
+        raise SystemExit(_flags['exclude']+' flag provided without directories to exclude')
 
+def _write_cmd(ex_dirs, only_dirs):
 
-def _path_sep():
+    def home_dir():
 
-    os_ty = os.name
-    if   os_ty == 'posix':    return '/'
-    elif os_ty == 'nt':       raise SystemError("findmygits does not yet handle Windows")
-    else:                     raise SystemError('Unknown os type {}'.format(os_ty))
+        os_ty = os.name
+        if   os_ty == 'posix':  return os.environ['HOME']
+        elif os_ty == 'nt':     raise SystemError("findmygits does not yet handle Windows")
+        else:                   raise SystemError('Unknown os type {}'.format(os_ty))
 
+    if only_dirs is not None:
+        for d in only_dirs:
+            shell_find_cmd = 'find '+d+' -type d -name "*.git"' # FIXME: missing += here?
+    elif ex_dirs is not None:
+        shell_find_cmd = 'find '+home_dir()+' -type d -name "*.git"'
+        for d in ex_dirs:
+            shell_find_cmd += '| grep -v ' + d
+    else:
+        shell_find_cmd = 'find '+home_dir()+' -type d -name "*.git"'
 
-def home_dir():
-
-    os_ty = os.name
-    if   os_ty == 'posix':  return os.environ['HOME']
-    elif os_ty == 'nt':     raise SystemError("findmygits does not yet handle Windows")
-    else:                   raise SystemError('Unknown os type {}'.format(os_ty))
-
+    return shell_find_cmd
 
 def _is_bare_repo(repo):
 
@@ -105,60 +120,37 @@ def _is_bare_repo(repo):
     # tried to catch Exception from Popen, couldn't
     # If Popen fails, it does however return '' when process decoded
     if decoded == '':
-        err_mssg = _TermColours.FAIL + \
-                   '\nRepo {0} was initially considered as a valid git repo on the basis that it has *.git ' \
-                   'as part of its name, but running "git rev-parse --is-bare-repository" returned ' \
-                   '"fatal: Not a git repository (or any of the parent directories)"' + _TermColours.END
+        raise Exception(_TermColours.BAD
+                       + '\nRepo'+repo+' was initially considered as a valid git repo on the basis that it has *.git ' \
+                         'as part of its name, but running "git rev-parse --is-bare-repository" returned ' \
+                         '"fatal: Not a git repository (or any of the parent directories)"'
+                       + _TermColours.END)
 
-        raise Exception(err_mssg.format(repo))
     return decoded == 'TRUE'
 
 
-def _check_flag_consistency(ex_dirs, only_dirs):
+class _TermColours:
+    BOLD    = '\033[1m'
+    HEADER  = '\033[95m'
+    BOLD_HEADER = BOLD + HEADER
+    OK    = '\033[92m'
+    BAD  = '\033[91m'
+    END   = '\033[0m'
 
-    if ex_dirs is not None and only_dirs is not None:
-        raise SystemExit('One of ' + _flags['exclude'] + ' or ' + _flags['include-only'] + ' flags expected, not both')
+def _path_sep():
 
-    if ex_dirs is []:
-        raise SystemExit(_flags['exclude'] + ' flag provided without directories to exclude')
-
-
-def _write_cmd(ex_dirs, only_dirs):
-
-    home           = home_dir()
-    shell_find_cmd = ''
-
-    if only_dirs is not None:
-        for d in only_dirs:
-            shell_find_cmd = 'find ' + d + ' -type d -name "*.git"' # FIXME: missing += here?
-
-    elif ex_dirs is not None:
-        shell_find_cmd = 'find ' + home + ' -type d -name "*.git"'
-        for d in ex_dirs:
-            shell_find_cmd += '| grep -v ' + d
-
-    else:
-        shell_find_cmd = 'find ' + home + ' -type d -name "*.git"'
-
-    return shell_find_cmd
-
-
-def _format_output(root: str, remotes: str, status: str):
-
-    remotes = _TermColours.FAIL + 'NONE\n'     + _TermColours.END if remotes == '' else '\n' + remotes
-    status  = _TermColours.FAIL + 'MODIFIED\n' + _TermColours.END if status == ''  else _TermColours.OK + 'CLEAN\n' + _TermColours.END
-
-    output_str = _small_bar + '\n{}:\n' + _small_bar + '\nREMOTES:{}' + '\nSTATUS:{}'
-    print( output_str . format(root, remotes, status) )
-
+    os_ty = os.name
+    if   os_ty == 'posix':    return '/'
+    elif os_ty == 'nt':       raise SystemError("findmygits does not yet handle Windows")
+    else:                     raise SystemError('Unknown os type {}'.format(os_ty))
 
 ########################################################
 # Main
 ########################################################
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Lists all local git repos on your computer. Prints bare repos and working repos (with corresponding remotes and statuses')
-    parser.add_argument(_flags['exclude'],      nargs='*', dest='exclude',      metavar='dir',  help='Directories to exclude')
-    parser.add_argument(_flags['include-only'], nargs=1,   dest='include_only', metavar='dir',  help='One Directory to include exclusively')
+    parser.add_argument('--exclude-dirs', nargs='*', dest='exclude',      metavar='dir',  help='Directories to exclude')
+    parser.add_argument('--include-only', nargs=1,   dest='include_only', metavar='dir',  help='One Directory to include exclusively')
 
     args    = parser.parse_args()
 
