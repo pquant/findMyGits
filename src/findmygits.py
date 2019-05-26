@@ -24,7 +24,7 @@ def find_repos(ex_dirs=None, only_dirs=None):
     return actives, bares
 
 
-def print_repos(bares, actives):
+def print_repos(bares, actives, verbose=False):
 
     _header_bar = '#' * 80
 
@@ -62,14 +62,21 @@ def print_repos(bares, actives):
             elif s.startswith("Changes to be committed"):   changes_matches    .append(_TermColours.BAD+s+_TermColours.END)
             elif s.startswith("nothing to commit"):         changes_matches    .append(_TermColours.OK +s+_TermColours.END)
 
-        if sync_remote_matches == []: sync_remote_matches.append(_TermColours.BAD+"No remote found"+_TermColours.END)
+        if sync_remote_matches == []:
+            sync_remote_matches.append(_TermColours.BAD+"No remote found"+_TermColours.END)
 
-        output_str = ('-'*40)+'\n{}:\n'+('-'*40)+'\nREMOTES:{}'+'\nREMOTE SYNC:{}'+'\nCHANGES:{}'
-        print( output_str . format( root
-                                  , _TermColours.BAD+'NONE\n'+_TermColours.END if remotes == '' else '\n' + remotes
-                                  , ' '.join(sync_remote_matches)
-                                  , ' '.join(changes_matches)
-                                  ))
+        synced     = all([_TermColours.BAD not in m for m in sync_remote_matches])
+        no_changes = all([_TermColours.BAD not in m for m in changes_matches])
+
+        if not verbose and synced and no_changes:
+            continue
+        else:
+            output_str = ('-'*40)+'\n{}:\n'+('-'*40)+'\nREMOTES:{}'+'\nREMOTE SYNC:{}'+'\nCHANGES:{}'
+            print( output_str . format( root
+                                      , _TermColours.BAD+'NONE\n'+_TermColours.END if remotes == '' else '\n' + remotes
+                                      , ' '.join(sync_remote_matches)
+                                      , ' '.join(changes_matches)
+                                      ))
 
 ########################################################
 # Private
