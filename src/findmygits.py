@@ -32,7 +32,7 @@ def print_repos(bares, actives):
          + _TermColours.BOLD_HEADER
          + "\nBare repos (determined using 'git rev-parse --is_baresitory')\n"
          + _TermColours.END
-         +_header_bar)
+         + _header_bar)
 
     for r in bares:  print(r)
 
@@ -49,7 +49,6 @@ def print_repos(bares, actives):
 
         os.chdir(root)
 
-        #p_status = Popen('git status | grep -E "'+status_patterns+'"', shell=True, stdout=PIPE)
         remotes = Popen('git remote -v', shell=True, stdout=PIPE) . communicate()[0] . decode('UTF-8')
         status  = Popen('git status',    shell=True, stdout=PIPE) . communicate()[0] . decode('UTF-8')
 
@@ -63,9 +62,7 @@ def print_repos(bares, actives):
             elif s.startswith("Changes to be committed"):   changes_matches    .append(_TermColours.BAD+s+_TermColours.END)
             elif s.startswith("nothing to commit"):         changes_matches    .append(_TermColours.OK +s+_TermColours.END)
 
-        #print("Zi status iz: "+status)
-        #print("sync_remote_matches: "+str(sync_remote_matches))
-        #print("changes_matches: "+str(changes_matches))
+        if sync_remote_matches == []: sync_remote_matches.append(_TermColours.BAD+"No remote found"+_TermColours.END)
 
         output_str = ('-'*40)+'\n{}:\n'+('-'*40)+'\nREMOTES:{}'+'\nREMOTE SYNC:{}'+'\nCHANGES:{}'
         print( output_str . format( root
@@ -73,7 +70,6 @@ def print_repos(bares, actives):
                                   , ' '.join(sync_remote_matches)
                                   , ' '.join(changes_matches)
                                   ))
-
 
 ########################################################
 # Private
