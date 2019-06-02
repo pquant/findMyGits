@@ -10,9 +10,7 @@ def find_repos(ex_dirs=None, only_dirs=None):
 
     shell_find_cmd = _write_cmd(ex_dirs, only_dirs)
 
-    repos = Popen(shell_find_cmd, shell = True, stdout = PIPE) \
-          . communicate()[0] \
-          . decode('UTF-8') \
+    repos = Popen(shell_find_cmd, shell = True, stdout = PIPE) . communicate()[0] . decode('UTF-8') \
           . split('\n')[:-1]
 
     bares, actives = [], []
@@ -32,15 +30,15 @@ def print_repos(bares, actives, verbose=False):
          + _TermColours.BOLD_HEADER
          + "\nBare repos (determined using 'git rev-parse --is_baresitory')\n"
          + _TermColours.END
-         + _header_bar)
+         + _header_bar + '\n')
 
     for r in bares:  print(r)
 
-    print( '\n' + _header_bar
+    print( _header_bar
          + _TermColours.BOLD_HEADER
          + "\nActive repos (characterised by a '.git' folder) and corresponding status/remotes\n"
          + _TermColours.END
-         + _header_bar)
+         + _header_bar + '\n')
 
     sep = _path_sep()
 
@@ -49,7 +47,6 @@ def print_repos(bares, actives, verbose=False):
 
         os.chdir(root)
 
-        remotes = Popen('git remote -v', shell=True, stdout=PIPE) . communicate()[0] . decode('UTF-8')
         status  = Popen('git status',    shell=True, stdout=PIPE) . communicate()[0] . decode('UTF-8')
 
         sync_remote_matches, changes_matches = [], []
@@ -71,9 +68,8 @@ def print_repos(bares, actives, verbose=False):
         if not verbose and synced and no_changes:
             continue
         else:
-            output_str = ('-'*40)+'\n{}:\n'+('-'*40)+'\nREMOTES:{}'+'\nREMOTE SYNC:{}'+'\nCHANGES:{}'
+            output_str = ('-'*40)+'\n{}:\n'+('-'*40)+'\nREMOTE SYNC:{}'+'\nCHANGES:{}\n'
             print( output_str . format( root
-                                      , _TermColours.BAD+'NONE\n'+_TermColours.END if remotes == '' else '\n' + remotes
                                       , ' '.join(sync_remote_matches)
                                       , ' '.join(changes_matches)
                                       ))
