@@ -8,9 +8,9 @@ def find_repos(ex_dirs=None, only_dirs=None):
 
     _check_flag_consistency(ex_dirs, only_dirs)
 
-    shell_find_cmd = _write_cmd(ex_dirs, only_dirs)
-
-    repos = Popen(shell_find_cmd, shell = True, stdout = PIPE) . communicate()[0] . decode('UTF-8') \
+    repos = Popen(_find_repos_cmd(ex_dirs, only_dirs), shell = True, stdout = PIPE) \
+          . communicate()[0] \
+          . decode('UTF-8') \
           . split('\n')[:-1]
 
     bares, actives = [], []
@@ -85,7 +85,7 @@ def _check_flag_consistency(ex_dirs, only_dirs):
     if ex_dirs is []:
         raise SystemExit(_flags['exclude']+' flag provided without directories to exclude')
 
-def _write_cmd(ex_dirs, only_dirs):
+def _find_repos_cmd(ex_dirs, only_dirs):
 
     def home_dir():
 
@@ -159,8 +159,10 @@ if __name__ == '__main__':
 
     ex_dirs          = args.exclude
     include_only_dir = args.include_only
-    include_only_dir = args.include_only
     verbose          = args.verbose
+
+    # print('ex_dirs: '+str(ex_dirs))
+    # print('include_only_dir: ' + str(include_only_dir))
 
     actives, bares = find_repos(ex_dirs, include_only_dir)
 
