@@ -22,7 +22,7 @@ def find_repos(ex_dirs=None, only_dirs=None):
     return actives, bares
 
 
-def print_repos(bares, actives, verbose=False):
+def print_repos(bares, actives, verbose):
 
     _header_bar = '#' * 80
 
@@ -150,12 +150,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Lists all local git repos on your computer. Prints bare repos and working repos (with corresponding remotes and statuses')
     parser.add_argument('--exclude-dirs', nargs='*', dest='exclude',      metavar='dir',  help='Directories to exclude')
     parser.add_argument('--include-only', nargs=1,   dest='include_only', metavar='dir',  help='One Directory to include exclusively')
+    parser.add_argument('-v','--verbose'
+                       , action='store_true'
+                       , dest='verbose'
+                       , help="Doesn't filter out repos that have no change and are in-sync with remote")
 
     args    = parser.parse_args()
 
     ex_dirs          = args.exclude
     include_only_dir = args.include_only
+    include_only_dir = args.include_only
+    verbose          = args.verbose
 
     actives, bares = find_repos(ex_dirs, include_only_dir)
 
-    print_repos(bares, actives)
+    print_repos(bares, actives, verbose)
